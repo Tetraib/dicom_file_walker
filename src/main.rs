@@ -9,7 +9,12 @@ use walkdir::WalkDir;
 // This function sends a HTTP request to upload the DICOM file to the server
 async fn upload_dicom_file(client: &Client, server_address: &str, path: &Path) {
     let data = fs::read(path).unwrap();
-    client.post(server_address).body(data).send().await.unwrap();
+    client
+        .post(&format!("{}/instances", server_address))
+        .body(data)
+        .send()
+        .await
+        .unwrap();
 }
 
 #[tokio::main]
@@ -29,7 +34,12 @@ async fn main() {
         // Scan directory for .dcm files
         for entry in WalkDir::new(&directory_path) {
             let entry = entry.unwrap();
-            if entry.file_name().to_string_lossy().ends_with(".dcm") {
+            if entry
+                .file_name()
+                .to_string_lossy()
+                .to_lowercase()
+                .ends_with(".dcm")
+            {
                 // If it's a .dcm file, upload it to the Orthanc DICOM server
                 let path = entry.path();
                 upload_dicom_file(&client, &server_address, &path).await;
